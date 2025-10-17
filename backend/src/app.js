@@ -31,9 +31,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// responde preflight
-app.options("*", cors());
-
 // Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
