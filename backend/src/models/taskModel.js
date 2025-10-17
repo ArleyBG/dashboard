@@ -164,22 +164,18 @@ export const actualizarPrioridadTarea = async (id, nuevaPrioridad, actorId) => {
   try {
     await conn.beginTransaction();
 
-    // Validar que la prioridad existe
+    // Validar que la prioridad existe en task_types
     const [prioRows] = await conn.query(
       "SELECT id FROM task_types WHERE id = ?",
       [nuevaPrioridad]
     );
     if (prioRows.length === 0) {
-      throw new Error(`La prioridad ${nuevaPrioridad} no existe en task_priorities`);
+      throw new Error(`La prioridad ${nuevaPrioridad} no existe en task_types`);
     }
 
-    // Obtener datos actuales
-    const [rows] = await conn.query(
-      "SELECT type_id FROM tasks WHERE id = ?",
-      [id]
-    );
-    const tarea = rows[0];
-    if (!tarea) throw new Error("Tarea no encontrada");
+    // Asegura que la tarea existe
+    const [rows] = await conn.query("SELECT id FROM tasks WHERE id = ?", [id]);
+    if (rows.length === 0) throw new Error("Tarea no encontrada");
 
     // Actualizar prioridad
     await conn.query("UPDATE tasks SET type_id = ? WHERE id = ?", [
@@ -187,17 +183,8 @@ export const actualizarPrioridadTarea = async (id, nuevaPrioridad, actorId) => {
       id,
     ]);
 
-    // Guardar en historial (opcional)
-    await conn.query(
-      `INSERT INTO task_history 
-       (task_id, actor_id, prev_state_id, new_state_id, prev_assigned_to, new_assigned_to) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, actorId, tarea.type_id, nuevaPrioridad, null, null]
-    );
-
     await conn.commit();
-    console.log("✅ Prioridad actualizada correctamente en DB");
-
+    console.log("Prioridad actualizada correctamente en DB");
   } catch (error) {
     await conn.rollback();
     console.error("Error en actualizarPrioridadTarea:", error);

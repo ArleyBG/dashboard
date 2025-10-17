@@ -1,3 +1,4 @@
+// src/controllers/taskController.js
 import {
   crearTarea,
   listarTareas,
@@ -9,16 +10,17 @@ import {
 
 // Crear nueva tarea (solo admin)
 export const crearTareaController = async (req, res) => {
-
-  console.log("Headers recibidos:", req.headers);
-  console.log("Body recibido:", req.body);
-
-
   try {
-
-    console.log("req.body recibido en backend:", req.body);
-
-    const { title, description, type_id, assigned_role, assigned_to, start_date, end_date } = req.body;
+    const body = req.body || {};
+    const {
+      title,
+      description = null,
+      type_id = null,
+      assigned_role = null,
+      assigned_to = null,
+      start_date = null,
+      end_date = null,
+    } = body;
 
     if (!title) {
       return res.status(400).json({ ok: false, message: "El título es obligatorio" });
@@ -27,114 +29,98 @@ export const crearTareaController = async (req, res) => {
     const tarea = {
       title,
       description,
-      type_id: type_id || null,
-      state_id: 1, // estado inicial por defecto (ej: "Compromiso")
-      assigned_role: assigned_role || null,
-      assigned_to: assigned_to || null,
-      created_by: req.user.id, // quien la crea
-      start_date: start_date || null,
-      end_date: end_date || null,
+      type_id: type_id ? Number(type_id) : null,
+      state_id: 1, // estado inicial
+      assigned_role: assigned_role ? Number(assigned_role) : null,
+      assigned_to: assigned_to ? Number(assigned_to) : null,
+      created_by: req.user.id,
+      start_date,
+      end_date,
     };
 
     const id = await crearTarea(tarea);
-
-    res.status(201).json({
-      ok: true,
-      message: "Tarea creada con éxito",
-      id
-    });
+    return res.status(201).json({ ok: true, message: "Tarea creada con éxito", id });
   } catch (error) {
     console.error("Error al crear tarea:", error);
-    res.status(500).json({ ok: false, message: "Error en el servidor" });
+    return res.status(500).json({ ok: false, message: "Error en el servidor" });
   }
 };
 
-// Listar todas las tareas (admin ve todas, t1/t2 solo lo suyo)
+// Listar tareas
 export const listarTareasController = async (req, res) => {
   try {
     const { role_id, id } = req.user;
-
     const tareas = await listarTareas(role_id, id);
-
-    res.json({
-      ok: true,
-      tareas
-    });
+    return res.json({ ok: true, tareas });
   } catch (error) {
     console.error("Error al listar tareas:", error);
-    res.status(500).json({ ok: false, message: "Error en el servidor" });
+    return res.status(500).json({ ok: false, message: "Error en el servidor" });
   }
 };
 
-// Actualizar estado de tarea
+// Actualizar estado
 export const actualizarEstadoTareaController = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { nuevoEstado } = req.body;
-    const estadoId = typeof nuevoEstado === "object" ? nuevoEstado.state_id : nuevoEstado;
+    const id = Number(req.params.id);
+    const body = req.body || {};
+    const nuevoEstado = typeof body === "object" ? body.nuevoEstado : undefined;
+    const estadoId = typeof nuevoEstado === "object" ? Number(nuevoEstado?.state_id) : Number(nuevoEstado);
 
-    if (!nuevoEstado) {
-      return res.status(400).json({ ok: false, message: "El nuevo estado es obligatorio" });
+    if (!id || !Number.isInteger(estadoId)) {
+      return res.status(400).json({ ok: false, message: "Datos inválidos (id/estado)" });
     }
 
     const tarea = await buscarTareaPorId(id);
-    if (!tarea) {
-      return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
-    }
+    if (!tarea) return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
 
     await actualizarEstadoTarea(id, estadoId, req.user.id);
-
-    res.json({ ok: true, message: "Estado actualizado con éxito" });
+    return res.json({ ok: true, message: "Estado actualizado con éxito" });
   } catch (error) {
     console.error("Error al actualizar tarea:", error);
-    res.status(500).json({ ok: false, message: "Error en el servidor" });
+    return res.status(500).json({ ok: false, message: "Error en el servidor" });
   }
 };
 
-// Asignar responsable a una tarea
+// Asignar responsable
 export const asignarResponsableController = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { assigned_to } = req.body;
+    const id = Number(req.params.id);
+    const { assigned_to } = req.body || {};
+    const userId = Number(assigned_to);
 
-    if (!assigned_to) {
-      return res.status(400).json({ ok: false, message: "El responsable es obligatorio" });
+    if (!id || !userId) {
+      return res.status(400).json({ ok: false, message: "Datos inválidos (id/responsable)" });
     }
 
     const tarea = await buscarTareaPorId(id);
-    if (!tarea) {
-      return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
-    }
+    if (!tarea) return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
 
-    await asignarResponsable(id, assigned_to, req.user.id);
-
-    res.json({ ok: true, message: "Responsable asignado con éxito" });
+    await asignarResponsable(id, userId, req.user.id);
+    return res.json({ ok: true, message: "Responsable asignado con éxito" });
   } catch (error) {
     console.error("Error al asignar responsable:", error);
-    res.status(500).json({ ok: false, message: "Error en el servidor" });
+    return res.status(500).json({ ok: false, message: "Error en el servidor" });
   }
 };
 
-// Actualizar prioridad de tarea
+// Actualizar prioridad
 export const actualizarPrioridadTareaController = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { nuevaPrioridad } = req.body;
+    const id = Number(req.params.id);
+    const { nuevaPrioridad } = req.body || {};
+    const prioridad = Number(nuevaPrioridad);
 
-    if (!nuevaPrioridad) {
-      return res.status(400).json({ ok: false, message: "La nueva prioridad es obligatoria" });
+    if (!id || !Number.isInteger(prioridad)) {
+      return res.status(400).json({ ok: false, message: "Datos inválidos (id/prioridad)" });
     }
 
     const tarea = await buscarTareaPorId(id);
-    if (!tarea) {
-      return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
-    }
+    if (!tarea) return res.status(404).json({ ok: false, message: "Tarea no encontrada" });
 
-    await actualizarPrioridadTarea(id, nuevaPrioridad, req.user.id);
-
-    res.json({ ok: true, message: "Prioridad actualizada con éxito" });
+    await actualizarPrioridadTarea(id, prioridad, req.user.id);
+    return res.json({ ok: true, message: "Prioridad actualizada con éxito" });
   } catch (error) {
     console.error("Error al actualizar prioridad:", error);
-    res.status(500).json({ ok: false, message: "Error en el servidor" });
+    return res.status(500).json({ ok: false, message: "Error en el servidor" });
   }
 };
