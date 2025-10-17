@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import { pool } from "./db.js"; 
+import { pool } from "./config/db.js"; 
 
 dotenv.config();
 const app = express();
