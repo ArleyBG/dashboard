@@ -1,125 +1,106 @@
-export const API_URL = "http://localhost:3000/api";
+// src/services/api.js
+// Lee la URL del backend desde env. En local, cae a http://localhost:8080/api
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol === "https:" ? "https" : "http"}://localhost:${import.meta.env.VITE_API_PORT || "8080"}/api`;
 
-// Helper para hacer peticiones al backend
+// Helper para peticiones
 const request = async (endpoint, options = {}) => {
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
+      // Si tu backend está en otro dominio, CORS debe estar permitido (ya lo tienes)
+      mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        ...options.headers,
+        ...(options.headers || {}),
       },
       ...options,
     });
 
-    const contentType = res.headers.get("content-type");
-    let data = {};
-    if (contentType && contentType.includes("application/json")) {
+    const ct = res.headers.get("content-type") || "";
+    let data;
+    if (ct.includes("application/json")) {
       data = await res.json();
     } else {
       data = { message: await res.text() };
     }
 
     return { ok: res.ok, ...data };
-  } catch (error) {
-    console.error("Error en request:", error);
+  } catch (err) {
+    console.error("Error en request:", err);
     return { ok: false, message: "Error en la comunicación con el servidor" };
   }
 };
 
-// Login
-export const loginRequest = async ({ email, password }) => {
-  return request("/auth/login", {
+// —— Auth ——
+export const loginRequest = ({ email, password }) =>
+  request("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-};
 
-// Registro
-export const registerRequest = async ({ cedula, name, email, role_id, password }) => {
-  return request("/auth/register", {
+export const registerRequest = ({ cedula, name, email, role_id, password }) =>
+  request("/auth/register", {
     method: "POST",
-    body: JSON.stringify({
-      cedula,   // se guarda como id en DB
-      name,
-      email,
-      role_id,
-      password,
-    }),
+    body: JSON.stringify({ cedula, name, email, role_id, password }),
   });
-};
 
-// Obtener perfil del usuario logueado
-export const getProfile = async () => {
+export const getProfile = () => {
   const token = localStorage.getItem("token");
   return request("/auth/profile", {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-// Listar tareas (admin ve todas, T1/T2 solo las suyas)
-export const getTasks = async () => {
+// —— Tareas ——
+export const getTasks = () => {
   const token = localStorage.getItem("token");
   return request("/tasks", {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-// Crear nueva tarea (solo admin)
-export const createTask = async (taskData) => {
+export const createTask = (taskData) => {
   const token = localStorage.getItem("token");
   return request("/tasks", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json", 
-    },
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(taskData),
   });
 };
 
-// Actualizar estado de una tarea
-export const updateTaskState = async (taskId, nuevoEstado) => {
+export const updateTaskState = (taskId, nuevoEstado) => {
   const token = localStorage.getItem("token");
   return request(`/tasks/${taskId}/estado`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ nuevoEstado: Number(nuevoEstado) }), 
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ nuevoEstado: Number(nuevoEstado) }),
   });
 };
 
-// Obtener Usuarios en la DB
-export const getUsers = async () => {
+export const getUsers = () => {
   const token = localStorage.getItem("token");
   return request("/users", {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-// Asignar responsable de una tarea
-export const updateTaskResponsable = async (taskId, assigned_to) => {
+export const updateTaskResponsable = (taskId, assigned_to) => {
   const token = localStorage.getItem("token");
   return request(`/tasks/${taskId}/responsable`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ assigned_to }),
   });
 };
 
-// Actualizar prioridad de una tarea
-export const updateTaskPriority = async (taskId, nuevaPrioridad) => {
+export const updateTaskPriority = (taskId, nuevaPrioridad) => {
   const token = localStorage.getItem("token");
   return request(`/tasks/${taskId}/prioridad`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ nuevaPrioridad: Number(nuevaPrioridad) }),
   });
 };
+
+export { API_URL };
