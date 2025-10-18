@@ -8,7 +8,7 @@ export default function TaskSearch({ tasks, onFilter }) {
     setQuery(value);
 
     if (value.trim() === "") {
-      onFilter(null); // vuelve a mostrar todas las tablas
+      onFilter(null);
       return;
     }
 
@@ -32,7 +32,12 @@ export default function TaskSearch({ tasks, onFilter }) {
         placeholder="Buscar por ID, nombre, rol, fecha o prioridad..."
         value={query}
         onChange={handleSearch}
-        className="w-[60%] border p-2 rounded"
+        className="
+          w-[60%] p-2 rounded border
+          bg-[rgb(var(--card))] text-[rgb(var(--fg))]
+          border-[rgb(var(--border))]
+          placeholder:text-[rgba(var(--fg),0.6)]
+        "
       />
     </div>
   );

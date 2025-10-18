@@ -52,15 +52,16 @@ export default function TaskForm({ onSubmit }) {
     onSubmit(payload);
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="m-auto space-y-3 p-4 border rounded w-[60%]">
+  const baseField = "border p-2 w-full rounded bg-[rgb(var(--card))] text-[rgb(var(--fg))] border-[rgb(var(--border))] placeholder:text-[rgba(var(--fg),0.6)]";
 
+  return (
+    <form onSubmit={handleSubmit} className="m-auto space-y-3 p-4 border rounded w-[60%] border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
       <input
         name="title"
         placeholder="Título"
         value={form.title}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
         required
       />
 
@@ -69,14 +70,14 @@ export default function TaskForm({ onSubmit }) {
         placeholder="Descripción"
         value={form.description}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
       />
 
       <select
         name="type_id"
         value={form.type_id}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
         required
       >
         <option value="">Selecciona prioridad</option>
@@ -90,7 +91,7 @@ export default function TaskForm({ onSubmit }) {
         name="assigned_to"
         value={form.assigned_to}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
         required
       >
         <option value="">Asignar a usuario</option>
@@ -101,12 +102,12 @@ export default function TaskForm({ onSubmit }) {
         ))}
       </select>
 
-      {/* Asignar por rol (T1 o T2). */}
+      {/* Asignar por rol */}
       <select
         name="assigned_role"
         value={form.assigned_role}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
         required
       >
         <option value="">Asignar por rol</option>
@@ -119,10 +120,10 @@ export default function TaskForm({ onSubmit }) {
         name="end_date"
         value={form.end_date}
         onChange={handleChange}
-        className="border p-2 w-full"
+        className={baseField}
       />
 
-      <button className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700">
+      <button className="bg-[rgb(var(--primary))] text-[rgb(var(--primary-fg))] px-3 py-2 rounded hover:opacity-90">
         Crear
       </button>
     </form>

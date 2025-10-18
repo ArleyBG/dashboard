@@ -10,10 +10,10 @@ import './App.css';
 
 function App() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      {/* Contenedor global para main */}
-      <main className="h-screen">
+      {/* main crece con el contenido sin forzar h-screen */}
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path='/register' element={<Register />} />
@@ -25,7 +25,7 @@ function App() {
           </Route>
         </Routes>
       </main>
-    </>
+    </div>
   )
 }
 

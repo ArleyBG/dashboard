@@ -7,7 +7,6 @@ export const Header = () => {
   const token = localStorage.getItem("token");
   const [darkMode, setDarkMode] = useState(false);
 
-  // Aplica tema guardado al montar
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -37,7 +36,8 @@ export const Header = () => {
     ">
       <div className="flex items-center gap-4">
         <figure>
-          <img src={HeaderIcon} alt="Logo Monda" className="h-16" />
+          {/* añade clase .logo para el filtro en oscuro */}
+          <img src={HeaderIcon} alt="Logo Monda" className="h-16 logo" />
         </figure>
         <h1 className="font-bold text-3xl">Monda</h1>
       </div>

@@ -3,9 +3,8 @@
   line-height: 1.5;
   font-weight: 400;
 
+  /* Habilita ambos esquemas, pero controlamos con .theme-dark manualmente */
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,23 +12,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 body {
   min-width: 320px;
   min-height: 100vh;
 }
 
+/* Animación suave */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-
-/* === Tokens base === */
+/* === Tokens base (tema claro) === */
 :root {
   /* Fondo y texto */
   --bg: 255 255 255;      /* blanco */
@@ -45,7 +42,7 @@ body {
   --primary-fg: 255 255 255;
 
   /* Header/Footer */
-  --header-bg: 30 58 138;   /* indigo-900 */
+  --header-bg: 30 58 138;   /* indigo-900 (azul profundo) */
   --header-fg: 255 255 255;
 }
 
@@ -58,23 +55,56 @@ body {
   --card: 31 41 55;      /* gray-800 */
   --border: 55 65 81;    /* gray-700 */
 
-  --primary: 59 130 246; /* blue-500 */
-  --primary-fg: 0 0 0;   /* negro si quieres contraste alto */
-
-  --header-bg: 17 24 39; /* gray-900 */
+  /* Mantén header azul para contraste con el logo negro original */
+  --header-bg: 30 58 138; /* indigo-900 */
   --header-fg: 243 244 246;
+
+  /* Primario ligeramente más claro en oscuro */
+  --primary: 59 130 246; /* blue-500 */
+  --primary-fg: 0 0 0;   /* para chips/badges sobre primario claro */
 }
 
-/* === Base global (aplica el tema) === */
+/* Base global */
 html, body {
   min-height: 100%;
   background-color: rgb(var(--bg));
   color: rgb(var(--fg));
 }
 
-/* Helper opcional si quieres transiciones suaves entre temas */
+/* Transiciones suaves entre temas */
 *,
 *::before,
 *::after {
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, filter .2s ease;
+}
+
+/* ====== Elementos de formulario (coherencia claro/oscuro) ====== */
+input, select, textarea, button {
+  background-color: rgb(var(--card));
+  color: rgb(var(--fg));
+  border: 1px solid rgb(var(--border));
+}
+
+select option {
+  background-color: rgb(var(--card));
+  color: rgb(var(--fg));
+}
+
+::placeholder {
+  color: rgba(var(--fg), 0.6);
+}
+
+/* Tablas y celdas por defecto */
+table {
+  background-color: rgb(var(--card));
+  color: rgb(var(--fg));
+}
+th, td {
+  border-color: rgb(var(--border)) !important;
+}
+
+/* Header: invierte el logo en tema oscuro si es un PNG oscuro */
+.theme-dark img.logo {
+  /* Si tu logo original es negro, esto lo “blanquea” en oscuro */
+  filter: brightness(0) invert(1);
 }

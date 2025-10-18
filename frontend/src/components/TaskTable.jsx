@@ -20,10 +20,12 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
     return `${day}/${month}/${year}`;
   };
 
+  const selectCls = "border p-1 rounded bg-[rgb(var(--card))] text-[rgb(var(--fg))] border-[rgb(var(--border))]";
+
   return (
-    <table className="w-full border-collapse border border-gray-300">
+    <table className="w-full border-collapse border border-[rgb(var(--border))]">
       <thead>
-        <tr className="bg-blue-600 text-white">
+        <tr className="bg-[rgb(var(--primary))] text-[rgb(var(--primary-fg))]">
           <th className="border p-2">ID</th>
           <th className="border p-2">Elemento</th>
           <th className="border p-2">Estado</th>
@@ -46,7 +48,7 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
               <select
                 value={task.state_id}
                 onChange={(e) => onUpdate(task.id, Number(e.target.value))}
-                className="border p-1 rounded"
+                className={selectCls}
               >
                 <option value={1}>Compromiso</option>
                 <option value={2}>Implementación</option>
@@ -65,7 +67,7 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
                   const res = await updateTaskResponsable(task.id, payload);
                   if (res.ok && onReload) onReload();
                 }}
-                className="border p-1 rounded"
+                className={selectCls}
               >
                 <option value="">—</option>
                 {users.map((u) => (
@@ -87,7 +89,7 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
                   const res = await updateTaskPriority(task.id, Number(e.target.value));
                   if (res.ok && onReload) onReload();
                 }}
-                className="border p-1 rounded"
+                className={selectCls}
               >
                 <option value={1}>Baja</option>
                 <option value={2}>Alta</option>
