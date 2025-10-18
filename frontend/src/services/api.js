@@ -1,21 +1,50 @@
 // src/services/api.js
-// Lee la URL del backend desde env. En local, cae a http://localhost:8080/api
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  `${window.location.protocol === "https:" ? "https" : "http"}://localhost:${import.meta.env.VITE_API_PORT || "8080"}/api`;
 
-// Helper para peticiones
+// ——— Base URL robusta ———
+// Soporta VITE_API_URL con o sin "/api" y sin barras duplicadas.
+// Ejemplos:
+//   VITE_API_URL=https://tu-backend.railway.app
+//   VITE_API_URL=https://tu-backend.railway.app/api
+const envUrl = (import.meta.env?.VITE_API_URL || "").trim();
+const fromEnv = envUrl ? envUrl.replace(/\/+$/, "") : ""; // quita barras finales
+let BASE = fromEnv;
+
+// Fallback local si no hay env
+if (!BASE) {
+  const proto = window.location.protocol.startsWith("https") ? "https" : "http";
+  const port = import.meta.env?.VITE_API_PORT || "8080";
+  BASE = `${proto}://localhost:${port}`;
+}
+
+// Asegura que termine en /api (una sola vez)
+if (!/\/api$/.test(BASE)) BASE = `${BASE}/api`;
+
+// Construye URL final sin dobles barras
+const makeUrl = (endpoint = "") => {
+  const ep = `${endpoint}`.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${BASE}${ep}`;
+};
+
+// ——— Helper de request ———
 const request = async (endpoint, options = {}) => {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      // Si tu backend está en otro dominio, CORS debe estar permitido (ya lo tienes)
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    const opts = {
       mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
       ...options,
-    });
+      headers,
+    };
+
+    // Asegura body serializado si es objeto
+    if (opts.body && typeof opts.body !== "string") {
+      opts.body = JSON.stringify(opts.body);
+    }
+
+    const res = await fetch(makeUrl(endpoint), opts);
 
     const ct = res.headers.get("content-type") || "";
     let data;
@@ -32,17 +61,17 @@ const request = async (endpoint, options = {}) => {
   }
 };
 
-// —— Auth ——
+// ——— Auth ———
 export const loginRequest = ({ email, password }) =>
   request("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
   });
 
 export const registerRequest = ({ cedula, name, email, role_id, password }) =>
   request("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ cedula, name, email, role_id, password }),
+    body: { cedula, name, email, role_id, password },
   });
 
 export const getProfile = () => {
@@ -52,7 +81,7 @@ export const getProfile = () => {
   });
 };
 
-// —— Tareas ——
+// ——— Tareas ———
 export const getTasks = () => {
   const token = localStorage.getItem("token");
   return request("/tasks", {
@@ -65,7 +94,7 @@ export const createTask = (taskData) => {
   return request("/tasks", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(taskData),
+    body: taskData || {}, // ← ya se serializa en request()
   });
 };
 
@@ -74,7 +103,7 @@ export const updateTaskState = (taskId, nuevoEstado) => {
   return request(`/tasks/${taskId}/estado`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ nuevoEstado: Number(nuevoEstado) }),
+    body: { nuevoEstado: Number(nuevoEstado) },
   });
 };
 
@@ -90,7 +119,7 @@ export const updateTaskResponsable = (taskId, assigned_to) => {
   return request(`/tasks/${taskId}/responsable`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ assigned_to }),
+    body: { assigned_to }, // puede ser número o null
   });
 };
 
@@ -99,8 +128,8 @@ export const updateTaskPriority = (taskId, nuevaPrioridad) => {
   return request(`/tasks/${taskId}/prioridad`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ nuevaPrioridad: Number(nuevaPrioridad) }),
+    body: { nuevaPrioridad: Number(nuevaPrioridad) },
   });
 };
 
-export { API_URL };
+export { BASE as API_URL };
