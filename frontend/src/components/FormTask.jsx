@@ -6,7 +6,7 @@ export default function TaskForm({ onSubmit }) {
     title: "",
     description: "",
     assigned_to: "",
-    assigned_role: "", 
+    assigned_role: "",
     type_id: "",
     end_date: "",
   });
@@ -24,14 +24,13 @@ export default function TaskForm({ onSubmit }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Si cambia el usuario y tiene role_id, autollenamos assigned_role
     if (name === "assigned_to") {
       const selected = users.find(u => String(u.id) === String(value));
       if (selected?.role_id) {
         setForm(prev => ({
           ...prev,
           assigned_to: value,
-          assigned_role: String(selected.role_id), // usualmente 2 o 3
+          assigned_role: String(selected.role_id),
         }));
         return;
       }
@@ -41,11 +40,14 @@ export default function TaskForm({ onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const toIntOrNull = (v) => (v === "" ? null : Number(v));
     const payload = {
-      ...form,
-      type_id: Number(form.type_id),
-      assigned_to: Number(form.assigned_to),
-      assigned_role: form.assigned_role ? Number(form.assigned_role) : null,
+      title: form.title,
+      description: form.description,
+      type_id: toIntOrNull(form.type_id),
+      assigned_to: toIntOrNull(form.assigned_to),
+      assigned_role: form.assigned_role === "" ? null : Number(form.assigned_role),
+      end_date: form.end_date || null,
     };
     onSubmit(payload);
   };
@@ -99,7 +101,7 @@ export default function TaskForm({ onSubmit }) {
         ))}
       </select>
 
-      {/* Asignar por rol (T1 o T2). Si el autollenado ya lo puso, igual puede editarse */}
+      {/* Asignar por rol (T1 o T2). */}
       <select
         name="assigned_role"
         value={form.assigned_role}

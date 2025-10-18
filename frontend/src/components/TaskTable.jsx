@@ -14,11 +14,10 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
 
   if (!Array.isArray(tasks)) return null;
 
-  // 👉 función para formatear la fecha directamente aquí
   const formatDate = (isoString) => {
     if (!isoString) return "—";
     const [year, month, day] = isoString.split("T")[0].split("-");
-    return `${day}/${month}/${year}`; // dd/mm/yyyy
+    return `${day}/${month}/${year}`;
   };
 
   return (
@@ -59,9 +58,11 @@ export default function TaskTable({ tasks = [], onUpdate, onReload }) {
             {/* Responsable */}
             <td className="border p-2">
               <select
-                value={task.assigned_to || ""}
+                value={task.assigned_to ?? ""}
                 onChange={async (e) => {
-                  const res = await updateTaskResponsable(task.id, Number(e.target.value));
+                  const v = e.target.value;
+                  const payload = v === "" ? null : Number(v);
+                  const res = await updateTaskResponsable(task.id, payload);
                   if (res.ok && onReload) onReload();
                 }}
                 className="border p-1 rounded"

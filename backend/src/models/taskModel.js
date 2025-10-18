@@ -1,3 +1,4 @@
+// src/models/taskModel.js
 import { pool } from "../config/db.js";
 
 // Crear tarea
@@ -31,10 +32,11 @@ export const crearTarea = async (tarea) => {
     ]
   );
 
+  console.log("[MODEL crearTarea] INSERT RESULT:", result);
   return result.insertId;
 };
 
-// Listar tareas con reglas según rol (join con users y prioridades)
+// Listar tareas con reglas según rol
 export const listarTareas = async (rol, idUsuario) => {
   let query = `
     SELECT t.*, 
@@ -52,6 +54,7 @@ export const listarTareas = async (rol, idUsuario) => {
   }
 
   const [rows] = await pool.query(query, params);
+  console.log("[MODEL listarTareas] rol:", rol, "idUsuario:", idUsuario, "count:", rows.length);
   return rows;
 };
 
@@ -67,6 +70,7 @@ export const buscarTareaPorId = async (id) => {
      WHERE t.id = ?`, 
     [id]
   );
+  console.log("[MODEL buscarTareaPorId] id:", id, "found:", rows.length);
   return rows[0] || null;
 };
 
@@ -76,30 +80,28 @@ export const actualizarEstadoTarea = async (id, nuevoEstado, actorId) => {
   try {
     await conn.beginTransaction();
 
-    // Validar que el estado existe en task_states
     const [estadoRows] = await conn.query(
       "SELECT id FROM task_states WHERE id = ?",
       [nuevoEstado]
     );
+    console.log("[MODEL actualizarEstado] validate state:", nuevoEstado, "exists:", estadoRows.length > 0);
     if (estadoRows.length === 0) {
       throw new Error(`El estado ${nuevoEstado} no existe en task_states`);
     }
 
-    // Obtener estado actual antes de actualizar
     const [rows] = await conn.query(
       "SELECT state_id, assigned_to FROM tasks WHERE id = ?",
       [id]
     );
     const tarea = rows[0];
+    console.log("[MODEL actualizarEstado] current:", tarea);
     if (!tarea) throw new Error("Tarea no encontrada");
 
-    // Actualizar estado
     await conn.query("UPDATE tasks SET state_id = ? WHERE id = ?", [
       nuevoEstado,
       id,
     ]);
 
-    // Guardar en historial
     await conn.query(
       `INSERT INTO task_history 
        (task_id, actor_id, prev_state_id, new_state_id, prev_assigned_to, new_assigned_to) 
@@ -108,8 +110,7 @@ export const actualizarEstadoTarea = async (id, nuevoEstado, actorId) => {
     );
 
     await conn.commit();
-    console.log("Estado actualizado correctamente en DB");
-
+    console.log("[MODEL actualizarEstado] OK ->", { id, from: tarea.state_id, to: nuevoEstado });
   } catch (error) {
     await conn.rollback();
     console.error("Error en actualizarEstadoTarea:", error);
@@ -119,27 +120,25 @@ export const actualizarEstadoTarea = async (id, nuevoEstado, actorId) => {
   }
 };
 
-// Asignar responsable a una tarea y guardar en historial
+// Asignar responsable (permite null) y guardar en historial
 export const asignarResponsable = async (id, nuevoResponsable, actorId) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    // Obtener datos actuales
     const [rows] = await conn.query(
       "SELECT state_id, assigned_to FROM tasks WHERE id = ?",
       [id]
     );
     const tarea = rows[0];
+    console.log("[MODEL asignarResponsable] current:", tarea, "new:", nuevoResponsable);
     if (!tarea) throw new Error("Tarea no encontrada");
 
-    // Actualizar responsable
     await conn.query("UPDATE tasks SET assigned_to = ? WHERE id = ?", [
       nuevoResponsable,
       id,
     ]);
 
-    // Guardar en historial
     await conn.query(
       `INSERT INTO task_history 
        (task_id, actor_id, prev_state_id, new_state_id, prev_assigned_to, new_assigned_to) 
@@ -148,7 +147,7 @@ export const asignarResponsable = async (id, nuevoResponsable, actorId) => {
     );
 
     await conn.commit();
-    console.log("Responsable actualizado correctamente en DB");
+    console.log("[MODEL asignarResponsable] OK ->", { id, from: tarea.assigned_to, to: nuevoResponsable });
   } catch (error) {
     await conn.rollback();
     console.error("Error en asignarResponsable:", error);
@@ -164,27 +163,26 @@ export const actualizarPrioridadTarea = async (id, nuevaPrioridad, actorId) => {
   try {
     await conn.beginTransaction();
 
-    // Validar que la prioridad existe en task_types
     const [prioRows] = await conn.query(
       "SELECT id FROM task_types WHERE id = ?",
       [nuevaPrioridad]
     );
+    console.log("[MODEL actualizarPrioridad] validate type:", nuevaPrioridad, "exists:", prioRows.length > 0);
     if (prioRows.length === 0) {
       throw new Error(`La prioridad ${nuevaPrioridad} no existe en task_types`);
     }
 
-    // Asegura que la tarea existe
     const [rows] = await conn.query("SELECT id FROM tasks WHERE id = ?", [id]);
+    console.log("[MODEL actualizarPrioridad] task exists:", rows.length > 0);
     if (rows.length === 0) throw new Error("Tarea no encontrada");
 
-    // Actualizar prioridad
     await conn.query("UPDATE tasks SET type_id = ? WHERE id = ?", [
       nuevaPrioridad,
       id,
     ]);
 
     await conn.commit();
-    console.log("Prioridad actualizada correctamente en DB");
+    console.log("[MODEL actualizarPrioridad] OK ->", { id, type_id: nuevaPrioridad });
   } catch (error) {
     await conn.rollback();
     console.error("Error en actualizarPrioridadTarea:", error);
